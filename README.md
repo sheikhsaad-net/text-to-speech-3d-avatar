@@ -1,63 +1,76 @@
-# Text-2-Talk and AI 3D Lip Sync Application
+# Text to Talk: 3D Voice Avatar
 
-This application converts text into audio using Google's Cloud Text-to-Speech API and synchronizes a 3D model's lips to the generated speech. The application uses Three.js for 3D rendering, Blender for 3D model creation, and Node.js for backend functionality.
+A prototype that combines Google Cloud Text-to-Speech with a Three.js 3D avatar. The Express API can synthesize text into an MP3, and the browser code analyzes audio levels to move the avatar's lip meshes.
 
-![3D Model Screen](./public/model-screen.png)
+![3D avatar preview](./public/model-screen.png)
 
-## Features
+## What is included
 
-- Convert text to audio via Google Cloud's Text-to-Speech API.
-- AI-driven 3D model lip synchronization based on generated audio.
-- Real-time interaction with the model through a simple web interface.
+- Express endpoint: `POST /speak` accepts JSON with a `text` value.
+- Google Cloud Text-to-Speech generates an MP3 using the configured English (US) neutral voice.
+- The generated audio is written to `public/audio/output.mp3`.
+- Three.js loads `public/avatar_testglb.glb` and looks for meshes named `Upperlips` and `Lowerlips`.
+- Lip movement is driven by average audio frequency levels. This is amplitude-based animation, not phoneme-accurate or AI lip-sync.
+- The page provides Speak and Reload buttons. It currently has no text-entry form; send text to the API separately.
 
-## Prerequisites
+## Technology
 
-- Node.js installed (version >= 14.0.0).
-- Google Cloud account with access to the Text-to-Speech API.
-- A Blender-created 3D model for lip synchronization.
+- Node.js
+- Express
+- Vite
+- Three.js
+- Google Cloud Text-to-Speech
 
-## Installation
+## Requirements
 
-### 1. Clone the repository
+- Node.js 18 or newer (required by the Vite 5 development server).
+- A Google Cloud project with the Text-to-Speech API enabled.
+- A service account JSON key authorized to use that API.
 
-First, clone the repository to your local machine:
+## Run locally
 
-git clone [https://github.com/sheikhsaad-net/text2talk.git](https://github.com/sheikhsaad-net/text2talk.git) `cd text2talk`
+1. Clone the repository and enter its directory:
 
-### 2. Install dependencies
+   ```sh
+   git clone https://github.com/sheikhsaad-net/text2talk.git
+   cd text2talk
+   ```
 
-Run the following command to install the required dependencies: `npm install`
+2. Install dependencies:
 
+   ```sh
+   npm install
+   ```
 
-### 3. Set up Google Cloud API credentials
+3. Put your Google service-account JSON file at `auth/credentials.json` in the project root. The server sets `GOOGLE_APPLICATION_CREDENTIALS` to this path. Keep the key outside `public/`, never commit it, and add it to your local Git ignore rules before using a real key. Do not paste credentials into source files or publish them.
 
-To authenticate with Google Cloud's Text-to-Speech API, follow these steps:
+4. Start the development servers:
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project or use an existing one.
-3. Enable the **Text-to-Speech API**.
-4. Generate an API key and service account credentials:
-   - Navigate to **IAM & Admin** > **Service Accounts**.
-   - Create a service account and download the JSON credentials file.
-5. Place the downloaded JSON credentials file in the `auth` folder in the `public` directory of the project.
-6. In the `auth` folder, open the `credentials.json` file and update the following fields with the data from your Google Cloud service account: { "private_key_id": "", "private_key": "", "client_email": "", "client_id": "" }
+   ```sh
+   npm run dev
+   ```
 
-### 4. Start the application
+   Vite serves the page at [http://localhost:5173](http://localhost:5173), and the Express API listens at [http://localhost:3000](http://localhost:3000).
 
-To run the application locally, use the following command: `npm run dev`
+## Generate speech
 
-This will start both the backend server and the frontend application.
+Send a request to the Express API, for example:
 
-### 5. Send text for speech synthesis
+```sh
+curl -X POST http://localhost:3000/speak ^
+  -H "Content-Type: application/json" ^
+  -d "{\"text\":\"Hello from the 3D avatar.\"}"
+```
 
-Once the server is running, you can send text to the backend to generate audio. Use the following URL to send a POST request with the text you want to convert to speech:
+The endpoint returns an `audioUrl` for the generated file. The current page's Speak button plays the MP3 loaded when the page starts; reload the page after generating a new file before playing it.
 
-POST http://localhost:3000/speak
+## Current prototype limitations
 
-Send a JSON object with the text you want to convert: { "text": "here you can type" }
+- There is no text-entry UI or browser workflow that submits text to `/speak`; call the endpoint separately.
+- Lip motion follows audio energy and does not match spoken phonemes.
+- The source currently expects a root-level `auth/credentials.json`, while the old README described a credentials file under the public directory. Keep real credentials private and use the root-level path the server expects.
+- The repository does not currently provide a production build or deployment configuration.
 
-### 6. View the speaking model
+## License
 
-Open your browser and go to the following URL to view the 3D model with synchronized lips: http://localhost:5173/
-
-When you press the "Speak" button, the 3D model will begin speaking with lip synchronization based on the audio generated.
+This project is provided under the MIT License. See [LICENSE](./LICENSE).
